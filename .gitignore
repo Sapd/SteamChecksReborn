@@ -1,0 +1,6 @@
+.vscode/*
+dep/*
+!dep/.gitkeep
+obj/*
+.DS_Store
+bin/
