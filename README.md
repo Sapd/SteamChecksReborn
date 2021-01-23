@@ -22,6 +22,8 @@ Default configuration:
 {
   "ApiKey": "",
   "AdditionalKickMessage": "",
+  "CachePassedPlayers": "",
+  "CacheDeniedPlayers": "",
   "Kicking": {
     "CommunityBan": true,
     "TradeBan": true,
@@ -46,6 +48,11 @@ Default configuration:
 ##### Options explained:
 * `ApiKey` -- The Steam Web API Key, required. Generate one here: https://steamcommunity.com/dev/apikey
 * `AdditionalKickMessage` -- This will be appended to all kick-messages. E.g. you could write in a way to get whitelisted
+* `CachePassedPlayers` -- Don't check players again, which passed the checks
+    * Cache resets on plugin-reload / server restart
+* `CacheDeniedPlayers` -- Don't check players again, which failed checks and kick directly
+    * Cache resets on plugin-reload / server restart
+    * Default is false, as players can't join if their have their profile on private - and then try to re-join with profile set to public
 * `CommunityBan` (`true` or `false`) -- Kick when the player is community-banned
 * `TradeBan` (`true` or `false`) -- Kick when the player is trade-banned
 * `PrivateProfile` (`true` or `false`) -- Kick when the player has a private profile. Most checks depend on it
@@ -81,8 +88,6 @@ You can also use a group for that:
 `oxide.usergroup add <steamid64> whitelist` -- Add player to whitelist group
 
 ## Behaviour
-
-Players who went through the checks via joining the server (not via test commands), will be temporarily cached in a separate white/denylist. So next time they will join, it won't do the checks again; and instead kick or let-through directly. The cache will be deleted when the plugin reloads or the server restarts.
 
 The plugin does the checks in this order:
 1. Bans

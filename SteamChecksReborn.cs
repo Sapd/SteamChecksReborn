@@ -55,6 +55,14 @@ namespace Oxide.Plugins
         /// This message will be appended to all Kick-messages
         /// </summary>
         private string additionalKickMessage;
+        /// <summary>
+        /// Cache players, which joined and successfully completed the checks
+        /// </summary>
+        private bool cachePassedPlayers;
+        /// <summary>
+        /// Cache players, which joined and failed the checks
+        /// </summary>
+        private bool cacheDeniedPlayers;
 
         /// <summary>
         /// Kick when the user has a Steam Community ban
@@ -125,6 +133,8 @@ namespace Oxide.Plugins
             Config["ApiKey"] = "";
             Config["LogInsteadofKick"] = false;
             Config["AdditionalKickMessage"] = "";
+            Config["CachePassedPlayers"] = true;
+            Config["CacheDeniedPlayers"] = false;
             Config["Kicking"] = new Dictionary<string, bool>
             {
                 ["CommunityBan"] = true,
@@ -154,6 +164,8 @@ namespace Oxide.Plugins
             apiKey = Config.Get<string>("ApiKey");
             logInsteadofKick = Config.Get<bool>("LogInsteadofKick");
             additionalKickMessage = Config.Get<string>("AdditionalKickMessage");
+            cachePassedPlayers = Config.Get<bool>("CachePassedPlayers");
+            cacheDeniedPlayers = Config.Get<bool>("CacheDeniedPlayers");
 
             kickCommunityBan = Config.Get<bool>("Kicking", "CommunityBan");
             kickTradeBan = Config.Get<bool>("Kicking", "TradeBan");
@@ -264,14 +276,14 @@ namespace Oxide.Plugins
             if (!logInsteadofKick)
             {
                 // Player already passed the checks, since the plugin is active
-                if (passedList.Contains(player.Id))
+                if (cachePassedPlayers && passedList.Contains(player.Id))
                 {
                     Log("{0} / {1} passed all checks already previously", player.Name, player.Id);
                     return;
                 }
 
                 // Player already passed the checks, since the plugin is active
-                if (failedList.Contains(player.Id))
+                if (cacheDeniedPlayers && failedList.Contains(player.Id))
                 {
                     Log("{0} / {1} failed a check already previously", player.Name, player.Id);
                     player.Kick(Lang("KickGeneric") + " " + additionalKickMessage);
