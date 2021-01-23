@@ -248,6 +248,12 @@ namespace Oxide.Plugins
             if (string.IsNullOrEmpty(apiKey))
             {
                 LogError(Lang("ErrorAPIConfig"));
+
+                // Unload on next tick
+                timer.Once(1f, () =>
+                {
+                    server.Command("oxide.unload SteamChecks");
+                });
                 return;
             }
 
