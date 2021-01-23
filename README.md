@@ -22,8 +22,8 @@ Default configuration:
 {
   "ApiKey": "",
   "AdditionalKickMessage": "",
-  "CachePassedPlayers": "",
-  "CacheDeniedPlayers": "",
+  "CachePassedPlayers": true,
+  "CacheDeniedPlayers": false,
   "Kicking": {
     "CommunityBan": true,
     "TradeBan": true,
