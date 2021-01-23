@@ -11,9 +11,9 @@ using Oxide.Core.Libraries.Covalence;
 
 namespace Oxide.Plugins
 {
-    [Info("Steam Checks Reborn", "Sapd", "1.0.0")]
-    [Description("Kick Players depending on Information on their Steam profile")]
-    public class SteamChecksReborn : CovalencePlugin
+    [Info("Steam Checks", "Sapd", "5.0.0")]
+    [Description("Kick players depending on information on their Steam profile")]
+    public class SteamChecks : CovalencePlugin
     {
         /// <summary>
         /// Set of steamids, which already passed the steamcheck test on joining
@@ -38,7 +38,7 @@ namespace Oxide.Plugins
         /// <summary>
         /// Oxide permission for a whitelist
         /// </summary>
-        private const string skipPermission = "steamchecksreborn.skip";
+        private const string skipPermission = "steamchecks.skip";
 
         /// <summary>
         /// API Key to use for the Web API
@@ -218,7 +218,7 @@ namespace Oxide.Plugins
                 ["WarningPrivateProfileSteamLevel"] = "**** WARNING: Private profile-kick is off. However the option to kick for steam level is on (MinSteamLevel).",
 
                 ["ErrorHttp"] = "Error while contacting the SteamAPI. Error: {0}.",
-                ["ErrorPrivateProfile"] = "This player has a private profile, therefore SteamChecks Reborn cannot check their hours.",
+                ["ErrorPrivateProfile"] = "This player has a private profile, therefore SteamChecks cannot check their hours.",
 
                 ["KickCommunityBan"] = "You have a Steam Community ban on record.",
                 ["KickVacBan"] = "You have too many VAC bans on record.",
@@ -337,7 +337,7 @@ namespace Oxide.Plugins
             // Check Bans first, as they are also visible on private profiles
             GetPlayerBans(steamid, (banStatusCode, banResponse) =>
             {
-                if (banStatusCode != (int)SteamChecksReborn.StatusCode.Success)
+                if (banStatusCode != (int)SteamChecks.StatusCode.Success)
                 {
                     APIError(steamid, "GetPlayerBans", banStatusCode);
                     return;
@@ -369,7 +369,7 @@ namespace Oxide.Plugins
                 // Next, get Player summaries - we have to check if the profile is public
                 GetSteamPlayerSummaries(steamid, (sumStatuscode, sumResult) =>
                 {
-                    if (sumStatuscode != (int)SteamChecksReborn.StatusCode.Success)
+                    if (sumStatuscode != (int)SteamChecks.StatusCode.Success)
                     {
                         APIError(steamid, "GetSteamPlayerSummaries", sumStatuscode);
                         return;
@@ -403,7 +403,7 @@ namespace Oxide.Plugins
                     {
                         GetSteamLevel(steamid, (steamLevelStatusCode, steamLevelResult) =>
                         {
-                            if (steamLevelStatusCode != (int)SteamChecksReborn.StatusCode.Success)
+                            if (steamLevelStatusCode != (int)SteamChecks.StatusCode.Success)
                             {
                                 APIError(steamid, "GetSteamLevel", sumStatuscode);
                                 return;
@@ -457,12 +457,12 @@ namespace Oxide.Plugins
             {
                 // Players can additionally hide their play time, check
                 bool gametimeHidden = false;
-                if (gameTimeStatusCode == (int)SteamChecksReborn.StatusCode.GameInfoHidden)
+                if (gameTimeStatusCode == (int)SteamChecks.StatusCode.GameInfoHidden)
                 {
                     gametimeHidden = true;
                 }
                 // Check if the request failed in general
-                else if (gameTimeStatusCode != (int)SteamChecksReborn.StatusCode.Success)
+                else if (gameTimeStatusCode != (int)SteamChecks.StatusCode.Success)
                 {
                     APIError(steamid, "GetPlaytimeInformation", gameTimeStatusCode);
                     return;
@@ -522,7 +522,7 @@ namespace Oxide.Plugins
                     GetSteamBadges(steamid, (badgeStatusCode, badgeResult) =>
                     {
                         // Check if the request failed in general
-                        if (badgeStatusCode != (int)SteamChecksReborn.StatusCode.Success)
+                        if (badgeStatusCode != (int)SteamChecks.StatusCode.Success)
                         {
                             APIError(steamid, "GetPlaytimeInformation", gameTimeStatusCode);
                             return;
@@ -938,7 +938,7 @@ namespace Oxide.Plugins
 
         #region Test
 
-        private const string pluginPrefix = "[SteamChecks Reborn] ";
+        private const string pluginPrefix = "[SteamChecks] ";
         private void TestResult(IPlayer player, string function, string result)
         {
             player.Reply(pluginPrefix + String.Format("{0} - {1}", function, result));
@@ -950,7 +950,7 @@ namespace Oxide.Plugins
         /// <param name="player"></param>
         /// <param name="command"></param>
         /// <param name="args">steamid64 to test for</param>
-        [Command("steamcheck"), Permission("steamchecksreborn.use")]
+        [Command("steamcheck"), Permission("steamchecks.use")]
         private void SteamCheckCommand(IPlayer player, string command, string[] args)
         {
             if (args.Length != 1)
@@ -977,7 +977,7 @@ namespace Oxide.Plugins
         /// <param name="player"></param>
         /// <param name="command"></param>
         /// <param name="args">steamid64 to test for</param>
-        [Command("steamcheck.runtests"), Permission("steamchecksreborn.use")]
+        [Command("steamcheck.runtests"), Permission("steamchecks.use")]
         private void SteamCheckTests(IPlayer player, string command, string[] args)
         {
             if (args.Length != 1)
@@ -1005,7 +1005,7 @@ namespace Oxide.Plugins
 
             GetSteamBadges(steamid, (StatusCode, response) =>
             {
-                if (((StatusCode)StatusCode) == SteamChecksReborn.StatusCode.Success)
+                if (((StatusCode)StatusCode) == SteamChecks.StatusCode.Success)
                 {
                     TestResult(player, "GetSteamBadges", String.Format("Status {0} - Response {1}", ((StatusCode)StatusCode).ToString(), response?.ToString()));
 

@@ -1,4 +1,4 @@
-# SteamChecksReborn
+# SteamChecks
 
 Checks connecting users for configurable criteria of the Steam WebAPI and kicks if not fulfilled.
 For uMod/Oxide (e.g. the Rust game).
@@ -7,8 +7,8 @@ Complete rewrite of the original SteamChecks plugin.
 
 ## Permissions
 
-* `steamchecksreborn.use`  -- Allows to issue test commands
-* `steamchecksreborn.skip` -- Users with this permission, won't be checked on connect
+* `steamchecks.use`  -- Allows to issue test commands
+* `steamchecks.skip` -- Users with this permission, won't be checked on connect
 
 ## Server/Console Commands
 
@@ -80,11 +80,11 @@ All checks do NOT include free-2-play games. You can disable checks with `-1`.
 
 ## Whitelist
 
-Simply give your players/groups you want to whitelist the permission `steamchecksreborn.skip`.
+Simply give your players/groups you want to whitelist the permission `steamchecks.skip`.
 
 You can also use a group for that: 
 `oxide.group add whitelist` -- Add whitelist group
-`oxide.grant group whitelist steamchecksreborn.skip` -- Add permission to whitelist group
+`oxide.grant group whitelist steamchecks.skip` -- Add permission to whitelist group
 `oxide.usergroup add <steamid64> whitelist` -- Add player to whitelist group
 
 ## Behaviour
