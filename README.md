@@ -1,6 +1,6 @@
 # SteamChecks
 
-Checks connecting users for configurable criteria of the Steam WebAPI and kicks if not fulfilled.
+Checks connecting users for configurable criteria of the Steam WebAPI and kicks if not fulfilled.  
 For uMod/Oxide (e.g. the Rust game).
 
 Complete rewrite of the original SteamChecks plugin.  
@@ -52,7 +52,7 @@ Default configuration:
     * Cache resets on plugin-reload / server restart
 * `CacheDeniedPlayers` -- Don't check players again, which failed checks and kick directly
     * Cache resets on plugin-reload / server restart
-    * Default is false, as players can't join if their have their profile on private - and then try to re-join with profile set to public
+    * Default is false, as players can't join if their have their profile on private - and then try to re-join with the same profile set to public
 * `CommunityBan` (`true` or `false`) -- Kick when the player is community-banned
 * `TradeBan` (`true` or `false`) -- Kick when the player is trade-banned
 * `PrivateProfile` (`true` or `false`) -- Kick when the player has a private profile. Most checks depend on it
@@ -80,12 +80,12 @@ All checks do NOT include free-2-play games. You can disable checks with `-1`.
 
 ## Whitelist
 
-Simply give your players/groups you want to whitelist the permission `steamchecks.skip`.
+Simply give your players/groups you want to whitelist the permission `steamchecks.skip`
 
-You can also use a group for that: 
-`oxide.group add whitelist` -- Add whitelist group
-`oxide.grant group whitelist steamchecks.skip` -- Add permission to whitelist group
-`oxide.usergroup add <steamid64> whitelist` -- Add player to whitelist group
+You can also use a group for that:  
+`oxide.group add whitelist` -- Add whitelist group  
+`oxide.grant group whitelist steamchecks.skip` -- Add permission to whitelist group  
+`oxide.usergroup add <steamid64> whitelist` -- Add player to whitelist group  
 
 ## Behaviour
 
@@ -104,7 +104,7 @@ The checks are completly asynchronous.
 
 ## Issues
 
-If you encounter a bug, please create an GitHub issue.
+If you encounter a bug, please create an GitHub issue.  
 Please include the output of `steamcheck <steamid64>` and `steamcheck.runtests <steamid64>`, using the steamid on which the checks don't pass correctly. Also your configuration file would be helpful.
 
 ## Development
