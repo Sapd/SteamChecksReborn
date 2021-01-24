@@ -80,6 +80,14 @@ namespace Oxide.Plugins
         /// </remarks>
         private bool kickPrivateProfile;
         /// <summary>
+        /// Kick when the user has a limited account
+        /// </summary>
+        private bool kickLimitedAccount;
+        /// <summary>
+        /// Kick when the user has not set up his steam profile yet
+        /// </summary>
+        private bool kickNoProfile;
+        /// <summary>
         /// Kick user, when his hours are hidden
         /// </summary>
         /// <remarks>
@@ -140,6 +148,8 @@ namespace Oxide.Plugins
                 ["CommunityBan"] = true,
                 ["TradeBan"] = true,
                 ["PrivateProfile"] = true,
+                ["LimitedAccount"] = true,
+                ["NoProfile"] = true,
                 ["ForceHoursPlayedKick"] = false,
             };
             Config["Thresholds"] = new Dictionary<string, long>
@@ -170,6 +180,8 @@ namespace Oxide.Plugins
             kickCommunityBan = Config.Get<bool>("Kicking", "CommunityBan");
             kickTradeBan = Config.Get<bool>("Kicking", "TradeBan");
             kickPrivateProfile = Config.Get<bool>("Kicking", "PrivateProfile");
+            kickLimitedAccount = Config.Get<bool>("Kicking", "LimitedAccount");
+            kickNoProfile = Config.Get<bool>("Kicking", "NoProfile");
             forceHoursPlayedKick = Config.Get<bool>("Kicking", "ForceHoursPlayedKick");
 
             maxVACBans = Config.Get<int>("Thresholds", "MaxVACBans");
@@ -225,6 +237,8 @@ namespace Oxide.Plugins
                 ["KickGameBan"] = "You have too many Game bans on record.",
                 ["KickTradeBan"] = "You have a Steam Trade ban on record.",
                 ["KickPrivateProfile"] = "Your Steam profile state is set to private.",
+                ["KickLimitedAccount"] = "Your Steam account is limited.",
+                ["KickNoProfile"] = "Set up your Steam community profile first.",
                 ["KickMinSteamLevel"] = "Your Steam level is not high enough.",
                 ["KickMinRustHoursPlayed"] = "You haven't played enough hours.",
                 ["KickMaxRustHoursPlayed"] = "You have played too much Rust.",
@@ -378,6 +392,18 @@ namespace Oxide.Plugins
                     if (sumStatuscode != (int)SteamChecks.StatusCode.Success)
                     {
                         APIError(steamid, "GetSteamPlayerSummaries", sumStatuscode);
+                        return;
+                    }
+
+                    if (sumResult.LimitedAccount && kickLimitedAccount)
+                    {
+                        callback(false, Lang("KickLimitedAccount"));
+                        return;
+                    }
+
+                    if (sumResult.NoProfile && kickNoProfile)
+                    {
+                        callback(false, Lang("KickNoProfile"));
                         return;
                     }
 
@@ -748,10 +774,26 @@ namespace Oxide.Plugins
             /// </remarks>
             public long Timecreated { get; set; }
 
+            /// <summary>
+            /// Is the account limited?
+            /// </summary>
+            /// <remarks>
+            /// Will be fulfilled by an additional request directly to the steamprofile with ?xml=1
+            /// </remarks>
+            public bool LimitedAccount { get; set; }
+
+            /// <summary>
+            /// Has the user set up his profile?
+            /// </summary>
+            /// <remarks>
+            /// Will be fulfilled by an additional request directly to the steamprofile with ?xml=1
+            /// </remarks>
+            public bool NoProfile { get; set; }
+
             public override string ToString()
             {
-                return String.Format("Steam profile visibility: {0} - Profile URL: {1} - Account created: {2}",
-                    Visibility.ToString(), Profileurl, Timecreated.ToString());
+                return String.Format("Steam profile visibility: {0} - Profile URL: {1} - Account created: {2} - Limited: {3} - NoProfile: {4}",
+                    Visibility.ToString(), Profileurl, Timecreated.ToString(), LimitedAccount, NoProfile);
             }
         }
 
@@ -783,7 +825,36 @@ namespace Oxide.Plugins
                         else
                             summary.Timecreated = -1;
 
-                        callback(httpCode, summary);
+                        // We have to to a seperate request to the steamcommunity profile to get infos about limited and wether their set up their profile
+                        {
+                            // Set defaults, which won't get the user kicked
+                            summary.NoProfile = false;
+                            summary.LimitedAccount = false;
+
+                            webrequest.Enqueue(string.Format("https://steamcommunity.com/profiles/{0}/?xml=1", steamid64), "", (httpCodeCommunity, responseCommunity) =>
+                            {
+                                if (httpCodeCommunity == (int)StatusCode.Success)
+                                {
+                                    // XML parser is disabled in umod, so have to use contains
+
+                                    // Has not set up their profile?
+                                    if (responseCommunity.Contains("This user has not yet set up their Steam Community profile."))
+                                        summary.NoProfile = true;
+
+                                    if (responseCommunity.Contains("<isLimitedAccount>1</isLimitedAccount>"))
+                                        summary.LimitedAccount = true;
+
+                                    callback(httpCode, summary);
+                                }
+                                else
+                                {
+                                    APIError(steamid64, "GetSteamPlayerSummaries - community xml", httpCodeCommunity);
+                                    // We will send into the callback success, as the normal GetSteamPlayerSummaries worked in this case
+                                    // So it's information can be respected
+                                    callback((int)StatusCode.Success, summary);
+                                }
+                            }, this);
+                        }
                     }
                     else
                     {

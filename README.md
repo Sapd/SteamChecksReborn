@@ -5,7 +5,7 @@ For uMod/Oxide (e.g. the Rust game).
 
 Complete rewrite of the original SteamChecks plugin.  
 
-If you upgrade from the previous versions (< 5), please back-up your old config and delete it.
+If you upgrade from the previous versions (< 5), please back-up your old config and delete it; like-wise the language file in oxide/lang/en etc.
 
 ## Permissions
 
@@ -22,14 +22,16 @@ If you upgrade from the previous versions (< 5), please back-up your old config 
 Default configuration:
 ```json
 {
-  "ApiKey": "",
   "AdditionalKickMessage": "",
-  "CachePassedPlayers": true,
+  "ApiKey": "",
   "CacheDeniedPlayers": false,
+  "CachePassedPlayers": true,
   "Kicking": {
     "CommunityBan": true,
     "TradeBan": true,
     "PrivateProfile": true,
+    "LimitedAccount": true,
+    "NoProfile": true,
     "ForceHoursPlayedKick": false
   },
   "LogInsteadofKick": false,
@@ -58,6 +60,8 @@ Default configuration:
 * `CommunityBan` (`true` or `false`) -- Kick when the player is community-banned
 * `TradeBan` (`true` or `false`) -- Kick when the player is trade-banned
 * `PrivateProfile` (`true` or `false`) -- Kick when the player has a private profile. Most checks depend on it
+* `LimitedAccount` (`true` or `false`) -- Kick when the player has a limited account
+* `NoProfile` (`true` or `false`) -- Kick when the player has his steam community profile not yet set up
 * `ForceHoursPlayedKick` (`true` or `false`) -- Kick the player, if hours played checks are on (e.g. MinRustHoursPlayed) - and he has his games hidden
     * Note: A lot of users have their Steam profiles on public BUT theirs hours-played hidden (new Steam default setting)
     * With this option being false, it will only do the hour-checks if he has the hours-played-information on public (recommended)
@@ -80,8 +84,6 @@ Default configuration:
 * `MinAllGamesHoursPlayed` in hours -- Minimum hours of games the user must have played (including rust)
 
 All checks do NOT include free-2-play games. You can disable checks with `-1`.
-
-To exclude limited accounts, use MinSteamLevel with a value greater than 0.
 
 ## Whitelist
 
