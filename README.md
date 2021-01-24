@@ -37,6 +37,7 @@ Default configuration:
   "LogInsteadofKick": false,
   "Thresholds": {
     "MaxVACBans": 1,
+    "MinDaysSinceLastBan": -1,
     "MaxGameBans": 1,
     "MinSteamLevel": 2,
     "MaxAccountCreationTime": -1,
@@ -67,6 +68,8 @@ Default configuration:
     * With this option being false, it will only do the hour-checks if he has the hours-played-information on public (recommended)
 * `LogInsteadofKick` (`true` or `false`) -- If true, will just log whether the player would pass the steamchecks, instead of actually kicking him on failure
 * `MaxVACBans` -- If `0`, will kick if the user has any VAC Ban. If `1`, will kick if the user has at least 2 VAC Bans, etc.. Use `-1` to disable check.
+* `MinDaysSinceLastBan` -- Minimum Number of days since the last ban. Use `-1` to disable check.
+    * This option only makes sense, when `MaxVACBans` is greater than 0 or disabled with -1.
 * `MaxGameBans` -- If `0`, will kick if the user has any Game Ban. If `1`, will kick if the user has at least 2 Game Bans, etc.. Use `-1` to disable check.
 
 ###### Those options require a **public** steam profile:
@@ -112,7 +115,7 @@ The checks are completly asynchronous.
 ## Issues
 
 If you encounter a bug, please create an GitHub issue.  
-Please include the output of `steamcheck <steamid64>` and `steamcheck.runtests <steamid64>`, using the steamid on which the checks don't pass correctly. Also your configuration file would be helpful.
+Please include the output of `steamcheck <steamid64>` and `steamcheck.runtests <steamid64>`, using the steamid on which the checks don't pass correctly. If you have an error, also include the offending steamids. Also your configuration file would be helpful.
 
 ## Development
 

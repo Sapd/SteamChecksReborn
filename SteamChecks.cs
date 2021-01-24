@@ -100,6 +100,10 @@ namespace Oxide.Plugins
         /// </summary>
         private int maxVACBans;
         /// <summary>
+        /// How old the last VAC ban should minimally
+        /// </summary>
+        private int minDaysSinceLastBan;
+        /// <summary>
         /// Maximum amount of game bans, the user is allowed to have
         /// </summary>
         private int maxGameBans;
@@ -155,6 +159,7 @@ namespace Oxide.Plugins
             Config["Thresholds"] = new Dictionary<string, long>
             {
                 ["MaxVACBans"] = 1,
+                ["MinDaysSinceLastBan"] = -1,
                 ["MaxGameBans"] = 1,
                 ["MinSteamLevel"] = 2,
                 ["MaxAccountCreationTime"] = -1,
@@ -185,6 +190,7 @@ namespace Oxide.Plugins
             forceHoursPlayedKick = Config.Get<bool>("Kicking", "ForceHoursPlayedKick");
 
             maxVACBans = Config.Get<int>("Thresholds", "MaxVACBans");
+            minDaysSinceLastBan = Config.Get<int>("Thresholds", "MinDaysSinceLastBan");
             maxGameBans = Config.Get<int>("Thresholds", "MaxGameBans");
 
 
@@ -373,14 +379,18 @@ namespace Oxide.Plugins
                     callback(false, Lang("KickTradeBan"));
                     return;
                 }
-                if (banResponse.GameBanCount > maxGameBans)
+                if (banResponse.GameBanCount > maxGameBans && maxGameBans > -1)
                 {
                     callback(false, Lang("KickGameBan"));
                     return;
                 }
-                // The Steam API returns two values, one is the count of VAC bans and one a boolean
-                // We will check both to be sure
-                if (banResponse.VacBanCount > maxVACBans || (banResponse.VacBan && maxVACBans == 0))
+
+                if (banResponse.VacBanCount > maxVACBans && maxVACBans > -1)
+                {
+                    callback(false, Lang("KickVacBan"));
+                    return;
+                }
+                if (banResponse.LastBan < minDaysSinceLastBan && minDaysSinceLastBan > 0)
                 {
                     callback(false, Lang("KickVacBan"));
                     return;
