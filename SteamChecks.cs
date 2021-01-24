@@ -11,7 +11,7 @@ using Oxide.Core.Libraries.Covalence;
 
 namespace Oxide.Plugins
 {
-    [Info("Steam Checks", "Sapd", "5.0.0")]
+    [Info("Steam Checks", "Sapd", "5.0.1")]
     [Description("Kick players depending on information on their Steam profile")]
     public class SteamChecks : CovalencePlugin
     {
@@ -197,7 +197,7 @@ namespace Oxide.Plugins
                 if (maxAccountCreationTime > 0)
                     LogWarning(Lang("WarningPrivateProfileCreationTime"));
 
-                if (minSteamLevel > 1)
+                if (minSteamLevel > 0)
                     LogWarning(Lang("WarningPrivateProfileSteamLevel"));
             }
         }
@@ -405,7 +405,7 @@ namespace Oxide.Plugins
                     }
 
                     // Check Steam Level
-                    if (minSteamLevel > 1)
+                    if (minSteamLevel > 0)
                     {
                         GetSteamLevel(steamid, (steamLevelStatusCode, steamLevelResult) =>
                         {
