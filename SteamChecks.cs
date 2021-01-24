@@ -11,7 +11,7 @@ using Oxide.Core.Libraries.Covalence;
 
 namespace Oxide.Plugins
 {
-    [Info("Steam Checks", "Sapd", "5.0.2")]
+    [Info("Steam Checks", "Sapd", "5.0.3")]
     [Description("Kick players depending on information on their Steam profile")]
     public class SteamChecks : CovalencePlugin
     {
@@ -29,6 +29,11 @@ namespace Oxide.Plugins
         /// Resets after a plugin reload
         /// </remarks>
         private HashSet<string> failedList;
+
+        /// <summary>
+        /// AppID of the game, where the plugin is loaded
+        /// </summary>
+        private uint appId;
 
         /// <summary>
         /// Url to the Steam Web API
@@ -87,6 +92,10 @@ namespace Oxide.Plugins
         /// Kick when the user has not set up his steam profile yet
         /// </summary>
         private bool kickNoProfile;
+        /// <summary>
+        /// Kick when the user is using a lended game
+        /// </summary>
+        private bool kickFamilyShare;
         /// <summary>
         /// Kick user, when his hours are hidden
         /// </summary>
@@ -154,6 +163,7 @@ namespace Oxide.Plugins
                 ["PrivateProfile"] = true,
                 ["LimitedAccount"] = true,
                 ["NoProfile"] = true,
+                ["FamilyShare"] = false,
                 ["ForceHoursPlayedKick"] = false,
             };
             Config["Thresholds"] = new Dictionary<string, long>
@@ -187,6 +197,7 @@ namespace Oxide.Plugins
             kickPrivateProfile = Config.Get<bool>("Kicking", "PrivateProfile");
             kickLimitedAccount = Config.Get<bool>("Kicking", "LimitedAccount");
             kickNoProfile = Config.Get<bool>("Kicking", "NoProfile");
+            kickFamilyShare = Config.Get<bool>("Kicking", "FamilyShare");
             forceHoursPlayedKick = Config.Get<bool>("Kicking", "ForceHoursPlayedKick");
 
             maxVACBans = Config.Get<int>("Thresholds", "MaxVACBans");
@@ -239,6 +250,7 @@ namespace Oxide.Plugins
                 ["ErrorPrivateProfile"] = "This player has a private profile, therefore SteamChecks cannot check their hours.",
 
                 ["KickCommunityBan"] = "You have a Steam Community ban on record.",
+                ["KickFamilyShare"] = "Please buy the game instead of lending it via family share.",
                 ["KickVacBan"] = "You have too many VAC bans on record.",
                 ["KickGameBan"] = "You have too many Game bans on record.",
                 ["KickTradeBan"] = "You have a Steam Trade ban on record.",
@@ -276,6 +288,8 @@ namespace Oxide.Plugins
                 });
                 return;
             }
+
+            appId = covalence.ClientAppId;
 
             passedList = new HashSet<string>();
             failedList = new HashSet<string>();
@@ -390,90 +404,108 @@ namespace Oxide.Plugins
                     callback(false, Lang("KickVacBan"));
                     return;
                 }
-                if (banResponse.LastBan < minDaysSinceLastBan && minDaysSinceLastBan > 0)
+                if (banResponse.LastBan > 0 && banResponse.LastBan < minDaysSinceLastBan && minDaysSinceLastBan > 0)
                 {
                     callback(false, Lang("KickVacBan"));
                     return;
                 }
 
-                // Next, get Player summaries - we have to check if the profile is public
-                GetSteamPlayerSummaries(steamid, (sumStatuscode, sumResult) =>
+                // Check if the game is lended
+                GetIsSharedGame(steamid, (sharedStatuscode, sharedResult) =>
                 {
-                    if (sumStatuscode != (int)SteamChecks.StatusCode.Success)
+                    if (sharedStatuscode != (int)SteamChecks.StatusCode.Success)
                     {
-                        APIError(steamid, "GetSteamPlayerSummaries", sumStatuscode);
+                        APIError(steamid, "GetIsSharedGame", sharedStatuscode);
                         return;
                     }
 
-                    if (sumResult.LimitedAccount && kickLimitedAccount)
+                    if (sharedResult && kickFamilyShare)
                     {
-                        callback(false, Lang("KickLimitedAccount"));
+                        callback(false, Lang("KickFamilyShare"));
                         return;
                     }
-
-                    if (sumResult.NoProfile && kickNoProfile)
+                    else
                     {
-                        callback(false, Lang("KickNoProfile"));
-                        return;
-                    }
-
-                    // Is profile not public?
-                    if (sumResult.Visibility != PlayerSummary.VisibilityType.Public)
-                    {
-                        if (kickPrivateProfile)
+                        // Next, get Player summaries - we have to check if the profile is public
+                        GetSteamPlayerSummaries(steamid, (sumStatuscode, sumResult) =>
                         {
-                            callback(false, Lang("KickPrivateProfile"));
-                            return;
-                        }
-                        else
-                        {
-                            // If it is not public, we can cancel checks here and allow the player in
-                            callback(true, null);
-                            return;
-                        }
-                    }
-
-                    // Check how old the account is
-                    if (maxAccountCreationTime > 0 && sumResult.Timecreated > maxAccountCreationTime)
-                    {
-                        callback(false, Lang("KickMaxAccountCreationTime"));
-                        return;
-                    }
-
-                    // Check Steam Level
-                    if (minSteamLevel > 0)
-                    {
-                        GetSteamLevel(steamid, (steamLevelStatusCode, steamLevelResult) =>
-                        {
-                            if (steamLevelStatusCode != (int)SteamChecks.StatusCode.Success)
+                            if (sumStatuscode != (int)SteamChecks.StatusCode.Success)
                             {
-                                APIError(steamid, "GetSteamLevel", sumStatuscode);
+                                APIError(steamid, "GetSteamPlayerSummaries", sumStatuscode);
                                 return;
                             }
 
-                            if (minSteamLevel > steamLevelResult)
+                            if (sumResult.LimitedAccount && kickLimitedAccount)
                             {
-                                callback(false, Lang("KickMinSteamLevel"));
+                                callback(false, Lang("KickLimitedAccount"));
                                 return;
                             }
-                            else
+
+                            if (sumResult.NoProfile && kickNoProfile)
                             {
-                                // Check game time, and amount of games
-                                if (minGameCount > 1 || minRustHoursPlayed > 0 || maxRustHoursPlayed > 0 ||
-                                        minOtherGamesPlayed > 0 || minAllGamesHoursPlayed > 0)
-                                    CheckPlayerGameTime(steamid, callback);
+                                callback(false, Lang("KickNoProfile"));
+                                return;
+                            }
+
+                            // Is profile not public?
+                            if (sumResult.Visibility != PlayerSummary.VisibilityType.Public)
+                            {
+                                if (kickPrivateProfile)
+                                {
+                                    callback(false, Lang("KickPrivateProfile"));
+                                    return;
+                                }
+                                else
+                                {
+                                    // If it is not public, we can cancel checks here and allow the player in
+                                    callback(true, null);
+                                    return;
+                                }
+                            }
+
+                            // Check how old the account is
+                            if (maxAccountCreationTime > 0 && sumResult.Timecreated > maxAccountCreationTime)
+                            {
+                                callback(false, Lang("KickMaxAccountCreationTime"));
+                                return;
+                            }
+
+                            // Check Steam Level
+                            if (minSteamLevel > 0)
+                            {
+                                GetSteamLevel(steamid, (steamLevelStatusCode, steamLevelResult) =>
+                                {
+                                    if (steamLevelStatusCode != (int)SteamChecks.StatusCode.Success)
+                                    {
+                                        APIError(steamid, "GetSteamLevel", sumStatuscode);
+                                        return;
+                                    }
+
+                                    if (minSteamLevel > steamLevelResult)
+                                    {
+                                        callback(false, Lang("KickMinSteamLevel"));
+                                        return;
+                                    }
+                                    else
+                                    {
+                                        // Check game time, and amount of games
+                                        if (minGameCount > 1 || minRustHoursPlayed > 0 || maxRustHoursPlayed > 0 ||
+                                                minOtherGamesPlayed > 0 || minAllGamesHoursPlayed > 0)
+                                            CheckPlayerGameTime(steamid, callback);
+                                    }
+                                });
+                            }
+                            // Else, if level check not done, Check game time, and amount of games
+                            else if (minGameCount > 1 || minRustHoursPlayed > 0 || maxRustHoursPlayed > 0 ||
+                                    minOtherGamesPlayed > 0 || minAllGamesHoursPlayed > 0)
+                            {
+                                CheckPlayerGameTime(steamid, callback);
+                            }
+                            else // Player now already passed all checks
+                            {
+                                callback(true, null);
                             }
                         });
-                    }
-                    // Else, if level check not done, Check game time, and amount of games
-                    else if (minGameCount > 1 || minRustHoursPlayed > 0 || maxRustHoursPlayed > 0 ||
-                            minOtherGamesPlayed > 0 || minAllGamesHoursPlayed > 0)
-                    {
-                        CheckPlayerGameTime(steamid, callback);
-                    }
-                    else // Player now already passed all checks
-                    {
-                        callback(true, null);
                     }
                 });
             });
@@ -619,7 +651,12 @@ namespace Oxide.Plugins
             /// <summary>
             /// Invalid steamid
             /// </summary>
-            PlayerNotFound = -101
+            PlayerNotFound = -101,
+
+            /// <summary>
+            /// Can also happen, when the SteamAPI returns something unexpected
+            /// </summary>
+            ParsingFailed = -102
         }
 
         /// <summary>
@@ -874,6 +911,37 @@ namespace Oxide.Plugins
         }
 
         /// <summary>
+        /// Is the player playing a lended game?
+        /// </summary>
+        /// <param name="steamid64">steamid64 of the user</param>
+        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"/> and bool which is true, if he is lending</param>
+        private void GetIsSharedGame(string steamid64, Action<int, bool> callback)
+        {
+            SteamWebRequest(SteamRequestType.IPlayerService, "IsPlayingSharedGame/v1", steamid64,
+                (httpCode, jsonResponse) =>
+                {
+                    if (httpCode == (int)StatusCode.Success)
+                    {
+                        JToken gamesCountJSON = jsonResponse["response"]?["lender_steamid"];
+                        if (gamesCountJSON == null)
+                        {
+                            callback((int)StatusCode.ParsingFailed, false);
+                            return;
+                        }
+
+                        if ((string)gamesCountJSON != "0")
+                            callback(httpCode, true);
+                        else
+                            callback(httpCode, false);
+                    }
+                    else
+                    {
+                        callback(httpCode, false);
+                    }
+                }, "&appid_playing=" + appId);
+        }
+
+        /// <summary>
         /// The badges we reference.
         /// </summary>
         /// <remarks>
@@ -1088,6 +1156,11 @@ namespace Oxide.Plugins
             GetSteamPlayerSummaries(steamid, (StatusCode, response) =>
             {
                 TestResult(player, "GetSteamPlayerSummaries", String.Format("Status {0} - Response {1}", ((StatusCode)StatusCode).ToString(), response?.ToString()));
+            });
+
+            GetIsSharedGame(steamid, (StatusCode, response) =>
+            {
+                TestResult(player, "GetIsSharedGame", String.Format("Status {0} - Response {1}", ((StatusCode)StatusCode).ToString(), response));
             });
 
             GetSteamBadges(steamid, (StatusCode, response) =>

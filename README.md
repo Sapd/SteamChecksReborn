@@ -32,6 +32,7 @@ Default configuration:
     "PrivateProfile": true,
     "LimitedAccount": true,
     "NoProfile": true,
+    "FamilyShare": false,
     "ForceHoursPlayedKick": false
   },
   "LogInsteadofKick": false,
@@ -101,13 +102,15 @@ You can also use a group for that:
 
 The plugin does the checks in this order:
 1. Bans
-2. Player Summaries (is profile private, account creation time)
+2. Is game lended (family share)
+3. Player Summaries (is profile private, account creation time)
+    * Limited Profile and Steam-Commmunty profile
 
 Only when profile public:  
 
-3. Player Level
-4. Game Hours and Count
-5. Game badges, to get amount of games
+4. Player Level
+5. Game Hours and Count
+6. Game badges, to get amount of games
     - Only done if the user has his game hours hidden
 
 The checks are completly asynchronous.
