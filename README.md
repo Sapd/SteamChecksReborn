@@ -5,6 +5,8 @@ For uMod/Oxide (e.g. the Rust game).
 
 Complete rewrite of the original SteamChecks plugin.  
 
+If you upgrade from the previous versions (< 5), please back-up your old config and delete it.
+
 ## Permissions
 
 * `steamchecks.use`  -- Allows to issue test commands
@@ -65,6 +67,7 @@ Default configuration:
 
 ###### Those options require a **public** steam profile:
 * `MinSteamLevel` -- The minimum Steam level the user must have
+    * A steam level of 1 or higher also excludes all limited accounts
 * `MaxAccountCreationTime` In Unix time -- Accounts created after this time point will be kicked
 * `MinGameCount` -- Minimum amount of games the user must have
     * If the user has hidden their hours played, it will use information from the Steam badges
@@ -77,6 +80,8 @@ Default configuration:
 * `MinAllGamesHoursPlayed` in hours -- Minimum hours of games the user must have played (including rust)
 
 All checks do NOT include free-2-play games. You can disable checks with `-1`.
+
+To exclude limited accounts, use MinSteamLevel with a value greater than 0.
 
 ## Whitelist
 
