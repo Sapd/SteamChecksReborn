@@ -11,7 +11,7 @@ using Oxide.Core.Libraries.Covalence;
 
 namespace Oxide.Plugins
 {
-    [Info("Steam Checks", "Sapd", "5.0.1")]
+    [Info("Steam Checks", "Sapd", "5.0.2")]
     [Description("Kick players depending on information on their Steam profile")]
     public class SteamChecks : CovalencePlugin
     {
