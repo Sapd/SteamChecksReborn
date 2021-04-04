@@ -46,6 +46,11 @@ namespace Oxide.Plugins
         private const string skipPermission = "steamchecks.skip";
 
         /// <summary>
+        /// Timeout for a web request
+        /// </summary>
+        private const int webTimeout = 2000;
+
+        /// <summary>
         /// API Key to use for the Web API
         /// </summary>
         /// <remarks>
@@ -492,6 +497,8 @@ namespace Oxide.Plugins
                                         if (minGameCount > 1 || minRustHoursPlayed > 0 || maxRustHoursPlayed > 0 ||
                                                 minOtherGamesPlayed > 0 || minAllGamesHoursPlayed > 0)
                                             CheckPlayerGameTime(steamid, callback);
+                                        else // Player now already passed all checks
+                                            callback(true, null);
                                     }
                                 });
                             }
@@ -699,7 +706,7 @@ namespace Oxide.Plugins
                 {
                     callback(httpCode, null);
                 }
-            }, this);
+            }, this, Core.Libraries.RequestMethod.GET, null, webTimeout);
         }
 
         /// <summary>
@@ -713,9 +720,17 @@ namespace Oxide.Plugins
                 (httpCode, jsonResponse) =>
                 {
                     if (httpCode == (int)StatusCode.Success)
-                        callback(httpCode, (int)jsonResponse["response"]["player_level"]);
+                    {
+                        JToken response = jsonResponse["response"]?["player_level"];
+                        if (response == null)
+                            callback((int)StatusCode.ParsingFailed, Int32.MaxValue);
+                        else
+                            callback(httpCode, (int)response);
+                    }
                     else
+                    {
                         callback(httpCode, -1);
+                    }
                 });
         }
 
@@ -900,7 +915,7 @@ namespace Oxide.Plugins
                                     // So it's information can be respected
                                     callback((int)StatusCode.Success, summary);
                                 }
-                            }, this);
+                            }, this, Core.Libraries.RequestMethod.GET, null, webTimeout);
                         }
                     }
                     else
