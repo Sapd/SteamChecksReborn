@@ -58,6 +58,10 @@ namespace Oxide.Plugins
         /// </remarks>
         private string apiKey;
         /// <summary>
+        /// Broadcast kick via chat?
+        /// </summary>
+        private bool broadcastKick;
+        /// <summary>
         /// Just log instead of actually kicking users?
         /// </summary>
         private bool logInsteadofKick;
@@ -157,6 +161,7 @@ namespace Oxide.Plugins
         protected override void LoadDefaultConfig()
         {
             Config["ApiKey"] = "";
+            Config["BroadcastKick"] = false;
             Config["LogInsteadofKick"] = false;
             Config["AdditionalKickMessage"] = "";
             Config["CachePassedPlayers"] = true;
@@ -192,6 +197,7 @@ namespace Oxide.Plugins
         private void InitializeConfig()
         {
             apiKey = Config.Get<string>("ApiKey");
+            broadcastKick = Config.Get<bool>("BroadcastKick");
             logInsteadofKick = Config.Get<bool>("LogInsteadofKick");
             additionalKickMessage = Config.Get<string>("AdditionalKickMessage");
             cachePassedPlayers = Config.Get<bool>("CachePassedPlayers");
@@ -354,6 +360,9 @@ namespace Oxide.Plugins
                         Log("{0} / {1} kicked. Reason: {2}", player.Name, player.Id, reason);
                         failedList.Add(player.Id);
                         player.Kick(reason + " " + additionalKickMessage);
+
+                        if (broadcastKick)
+                            server.Broadcast(Lang("Console"), "", player.Name, reason);
                     }
                 }
             });
