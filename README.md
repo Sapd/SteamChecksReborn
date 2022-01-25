@@ -1,9 +1,4 @@
-# SteamChecks
-
 Checks connecting users for configurable criteria of the Steam WebAPI and kicks if not fulfilled.  
-For uMod/Oxide (e.g. the Rust game).
-
-Complete rewrite of the original SteamChecks plugin.  
 
 If you upgrade from the previous versions (< 5), please back-up your old config and delete it; like-wise the language file in oxide/lang/en etc.
 
@@ -12,14 +7,13 @@ If you upgrade from the previous versions (< 5), please back-up your old config 
 * `steamchecks.use`  -- Allows to issue test commands
 * `steamchecks.skip` -- Users with this permission, won't be checked on connect
 
-## Server/Console Commands
+## Console Commands
 
 * `steamcheck <steamid64>` -- Checks the given steamid64 (does not matter if connected), for all configured criteria and returns wether he would have been kicked
 * `steamcheck.runtests <steamid64>` -- Calls all WebAPI functions with the given steamid64 and returns detailed output. Use this output when creating an issue
 
 ## Configuration
 
-Default configuration:
 ```json
 {
   "AdditionalKickMessage": "",
@@ -51,7 +45,8 @@ Default configuration:
 }
 ```
 
-##### Options explained:
+##### Options explained
+
 * `ApiKey` -- The Steam Web API Key, required. Generate one here: https://steamcommunity.com/dev/apikey
 * `AdditionalKickMessage` -- This will be appended to all kick-messages. E.g. you could write in a way to get whitelisted
 * `CachePassedPlayers` -- Don't check players again, which passed the checks
