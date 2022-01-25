@@ -1,17 +1,13 @@
 using System;
 using System.Collections.Generic;
-
-using Newtonsoft.Json.Linq;
 using System.Linq;
-
+using Newtonsoft.Json.Linq;
 using Oxide.Core;
 using Oxide.Core.Libraries.Covalence;
 
-
-
 namespace Oxide.Plugins
 {
-    [Info("Steam Checks", "Sapd", "5.0.3")]
+    [Info("Steam Checks", "Sapd", "5.0.4")]
     [Description("Kick players depending on information on their Steam profile")]
     public class SteamChecks : CovalencePlugin
     {
@@ -337,7 +333,7 @@ namespace Oxide.Plugins
                 if (cacheDeniedPlayers && failedList.Contains(player.Id))
                 {
                     Log("{0} / {1} failed a check already previously", player.Name, player.Id);
-                    player.Kick(Lang("KickGeneric") + " " + additionalKickMessage);
+                    player.Kick(Lang("KickGeneric", player.Id) + " " + additionalKickMessage);
                     return;
                 }
             }
@@ -362,7 +358,12 @@ namespace Oxide.Plugins
                         player.Kick(reason + " " + additionalKickMessage);
 
                         if (broadcastKick)
-                            server.Broadcast(Lang("Console"), "", player.Name, reason);
+                        {
+                            foreach (IPlayer target in players.Connected)
+                            {
+                                target.Message(Lang("Console", player.Id), "", player.Name, reason);
+                            }
+                        }
                     }
                 }
             });
@@ -382,7 +383,7 @@ namespace Oxide.Plugins
         /// 1. Bans
         /// 2. Player Summaries (Private profile, Creation time)
         /// 3. Player Level
-        /// Via <see cref="CheckPlayerGameTime"/>
+        /// Via <see cref="CheckPlayerGameTime"></see>
         /// 4. Game Hours and Count
         /// 5. Game badges, to get amount of games if user has hidden Game Hours
         /// </remarks>
@@ -399,28 +400,28 @@ namespace Oxide.Plugins
 
                 if (banResponse.CommunityBan && kickCommunityBan)
                 {
-                    callback(false, Lang("KickCommunityBan"));
+                    callback(false, Lang("KickCommunityBan", steamid));
                     return;
                 }
                 if (banResponse.EconomyBan && kickTradeBan)
                 {
-                    callback(false, Lang("KickTradeBan"));
+                    callback(false, Lang("KickTradeBan", steamid));
                     return;
                 }
                 if (banResponse.GameBanCount > maxGameBans && maxGameBans > -1)
                 {
-                    callback(false, Lang("KickGameBan"));
+                    callback(false, Lang("KickGameBan", steamid));
                     return;
                 }
 
                 if (banResponse.VacBanCount > maxVACBans && maxVACBans > -1)
                 {
-                    callback(false, Lang("KickVacBan"));
+                    callback(false, Lang("KickVacBan", steamid));
                     return;
                 }
                 if (banResponse.LastBan > 0 && banResponse.LastBan < minDaysSinceLastBan && minDaysSinceLastBan > 0)
                 {
-                    callback(false, Lang("KickVacBan"));
+                    callback(false, Lang("KickVacBan", steamid));
                     return;
                 }
 
@@ -435,7 +436,7 @@ namespace Oxide.Plugins
 
                     if (sharedResult && kickFamilyShare)
                     {
-                        callback(false, Lang("KickFamilyShare"));
+                        callback(false, Lang("KickFamilyShare", steamid));
                         return;
                     }
                     else
@@ -451,13 +452,13 @@ namespace Oxide.Plugins
 
                             if (sumResult.LimitedAccount && kickLimitedAccount)
                             {
-                                callback(false, Lang("KickLimitedAccount"));
+                                callback(false, Lang("KickLimitedAccount", steamid));
                                 return;
                             }
 
                             if (sumResult.NoProfile && kickNoProfile)
                             {
-                                callback(false, Lang("KickNoProfile"));
+                                callback(false, Lang("KickNoProfile", steamid));
                                 return;
                             }
 
@@ -466,7 +467,7 @@ namespace Oxide.Plugins
                             {
                                 if (kickPrivateProfile)
                                 {
-                                    callback(false, Lang("KickPrivateProfile"));
+                                    callback(false, Lang("KickPrivateProfile", steamid));
                                     return;
                                 }
                                 else
@@ -480,7 +481,7 @@ namespace Oxide.Plugins
                             // Check how old the account is
                             if (maxAccountCreationTime > 0 && sumResult.Timecreated > maxAccountCreationTime)
                             {
-                                callback(false, Lang("KickMaxAccountCreationTime"));
+                                callback(false, Lang("KickMaxAccountCreationTime", steamid));
                                 return;
                             }
 
@@ -497,7 +498,7 @@ namespace Oxide.Plugins
 
                                     if (minSteamLevel > steamLevelResult)
                                     {
-                                        callback(false, Lang("KickMinSteamLevel"));
+                                        callback(false, Lang("KickMinSteamLevel", steamid));
                                         return;
                                     }
                                     else
@@ -529,7 +530,7 @@ namespace Oxide.Plugins
 
         /// <summary>
         /// Checks a steamid, wether it would be allowed into the server
-        /// Called by <see cref="CheckPlayer"/>
+        /// Called by <see cref="CheckPlayer"></see>
         /// </summary>
         /// <param name="steamid">steamid64 of the user</param>
         /// <param name="callback">
@@ -568,7 +569,7 @@ namespace Oxide.Plugins
                     if (minRustHoursPlayed > 0 || maxRustHoursPlayed > 0 ||
                         minOtherGamesPlayed > 0 || minAllGamesHoursPlayed > 0)
                     {
-                        callback(false, Lang("KickHoursPrivate"));
+                        callback(false, Lang("KickHoursPrivate", steamid));
                         return;
                     }
                 }
@@ -577,30 +578,30 @@ namespace Oxide.Plugins
                 {
                     if (minRustHoursPlayed > 0 && gameTimeResult.PlaytimeRust < minRustHoursPlayed)
                     {
-                        callback(false, Lang("KickMinRustHoursPlayed"));
+                        callback(false, Lang("KickMinRustHoursPlayed", steamid));
                         return;
                     }
                     if (maxRustHoursPlayed > 0 && gameTimeResult.PlaytimeRust > maxRustHoursPlayed)
                     {
-                        callback(false, Lang("KickMaxRustHoursPlayed"));
+                        callback(false, Lang("KickMaxRustHoursPlayed", steamid));
                         return;
                     }
                     if (minAllGamesHoursPlayed > 0 && gameTimeResult.PlaytimeAll < minAllGamesHoursPlayed)
                     {
-                        callback(false, Lang("KickMinSteamHoursPlayed"));
+                        callback(false, Lang("KickMinSteamHoursPlayed", steamid));
                         return;
                     }
                     if (minOtherGamesPlayed > 0 &&
                         (gameTimeResult.PlaytimeAll - gameTimeResult.PlaytimeRust) < minOtherGamesPlayed &&
                         gameTimeResult.GamesCount > 1) // it makes only sense to check, if there are other games in the result set
                     {
-                        callback(false, Lang("KickMinNonRustPlayed"));
+                        callback(false, Lang("KickMinNonRustPlayed", steamid));
                         return;
                     }
 
                     if (minGameCount > 1 && gameTimeResult.GamesCount < minGameCount)
                     {
-                        callback(false, Lang("KickGameCount"));
+                        callback(false, Lang("KickGameCount", steamid));
                         return;
                     }
                 }
@@ -621,7 +622,7 @@ namespace Oxide.Plugins
                         int gamesOwned = ParseBadgeLevel(badgeResult, Badge.GamesOwned);
                         if (gamesOwned < minGameCount)
                         {
-                            callback(false, Lang("KickGameCount"));
+                            callback(false, Lang("KickGameCount", steamid));
                             return;
                         }
                         else
@@ -697,7 +698,7 @@ namespace Oxide.Plugins
         /// <param name="steamRequestType"></param>
         /// <param name="endpoint">The specific endpoint, e.g. GetSteamLevel/v1</param>
         /// <param name="steamid64"></param>
-        /// <param name="callback">Callback returning the HTTP status code <see cref="StatusCode"/> and a JSON JObject</param>
+        /// <param name="callback">Callback returning the HTTP status code <see cref="StatusCode"></see> and a JSON JObject</param>
         /// <param name="additionalArguments">Additional arguments, e.g. &foo=bar</param>
         private void SteamWebRequest(SteamRequestType steamRequestType, string endpoint, string steamid64,
             Action<int, JObject> callback, string additionalArguments = "")
@@ -722,7 +723,7 @@ namespace Oxide.Plugins
         /// Get the Steam level of a user
         /// </summary>
         /// <param name="steamid64">The users steamid64</param>
-        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"/> and the steamlevel</param>
+        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"></see> and the steamlevel</param>
         private void GetSteamLevel(string steamid64, Action<int, int> callback)
         {
             SteamWebRequest(SteamRequestType.IPlayerService, "GetSteamLevel/v1", steamid64,
@@ -778,10 +779,10 @@ namespace Oxide.Plugins
         /// Get information about hours played in Steam
         /// </summary>
         /// <param name="steamid64">steamid64 of the user</param>
-        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"/> and the <see cref="GameTimeInformation"/></param>
+        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"></see> and the <see cref="GameTimeInformation"></see></param>
         /// <remarks>
         /// Even when the user has his profile public, this can be hidden. This seems to be often the case.
-        /// When hidden, the statuscode will be <see cref="StatusCode.GameInfoHidden"/>
+        /// When hidden, the statuscode will be <see cref="StatusCode.GameInfoHidden"></see>
         /// </remarks>
         private void GetPlaytimeInformation(string steamid64, Action<int, GameTimeInformation> callback)
         {
@@ -872,7 +873,7 @@ namespace Oxide.Plugins
         /// Get Summary information about the player, like if his profile is visible
         /// </summary>
         /// <param name="steamid64">steamid64 of the user</param>
-        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"/> and the <see cref="PlayerSummary"/></param>
+        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"></see> and the <see cref="PlayerSummary"></see></param>
         private void GetSteamPlayerSummaries(string steamid64, Action<int, PlayerSummary> callback)
         {
             SteamWebRequest(SteamRequestType.ISteamUser, "GetPlayerSummaries/v2", steamid64,
@@ -938,7 +939,7 @@ namespace Oxide.Plugins
         /// Is the player playing a lended game?
         /// </summary>
         /// <param name="steamid64">steamid64 of the user</param>
-        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"/> and bool which is true, if he is lending</param>
+        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"></see> and bool which is true, if he is lending</param>
         private void GetIsSharedGame(string steamid64, Action<int, bool> callback)
         {
             SteamWebRequest(SteamRequestType.IPlayerService, "IsPlayingSharedGame/v1", steamid64,
@@ -988,7 +989,7 @@ namespace Oxide.Plugins
         /// Get all Steam Badges
         /// </summary>
         /// <param name="steamid64">steamid64 of the user</param>
-        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"/> and the result as JSON</param>
+        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"></see> and the result as JSON</param>
         private void GetSteamBadges(string steamid64, Action<int, JObject> callback)
         {
             SteamWebRequest(SteamRequestType.IPlayerService, "GetBadges/v1", steamid64,
@@ -1001,8 +1002,8 @@ namespace Oxide.Plugins
         /// <summary>
         /// Fetched the level of a given badgeid from a JSON Web API result
         /// </summary>
-        /// <param name="json">Result JSON as generated by <see cref="GetSteamBadges"/></param>
-        /// <param name="badgeID">ID of the badge, see <see cref="Badge"/></param>
+        /// <param name="json">Result JSON as generated by <see cref="GetSteamBadges"></see></param>
+        /// <param name="badgeID">ID of the badge, see <see cref="Badge"></see></param>
         /// <returns>level of the badge, or 0 if badge not existing</returns>
         private int ParseBadgeLevel(JObject json, Badge badgeID)
         {
@@ -1057,7 +1058,7 @@ namespace Oxide.Plugins
         /// Get the information about the bans the player has
         /// </summary>
         /// <param name="steamid64">steamid64 of the user</param>
-        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"/> and the result as <see cref="PlayerBans"/></param>
+        /// <param name="callback">Callback with the statuscode <see cref="StatusCode"></see> and the result as <see cref="PlayerBans"></see></param>
         /// <remarks>
         /// Getting the user bans is even possible, if the profile is private
         /// </remarks>
@@ -1107,7 +1108,7 @@ namespace Oxide.Plugins
         /// </summary>
         /// <param name="steamid">steamid64 for which user the request was</param>
         /// <param name="function">functionname in the plugin</param>
-        /// <param name="statusCode">see <see cref="StatusCode"/></param>
+        /// <param name="statusCode">see <see cref="StatusCode"></see></param>
         private void APIError(string steamid, string function, int statusCode)
         {
             string detailedError = String.Format(" SteamID: {0} - Function: {1} - ErrorCode: {2}", steamid, function, (StatusCode)statusCode);
